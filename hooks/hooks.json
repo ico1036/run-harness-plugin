@@ -1,0 +1,22 @@
+{
+  "Stop": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python3 ~/.claude/plugins/run-harness/scripts/on_stop.py"
+        }
+      ]
+    }
+  ],
+  "PostToolUse": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python3 ~/.claude/plugins/run-harness/scripts/on_tool.py"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "run-harness",
+  "description": "Run prompts autonomously in tmux with .done signal polling, heartbeat monitoring, hung detection, and exponential backoff retry.",
+  "version": "1.0.0",
+  "author": {
+    "name": "ico1036"
+  },
+  "keywords": ["tmux", "autonomous", "harness", "background", "polling"]
+}
