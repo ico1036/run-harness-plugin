@@ -1,0 +1,14 @@
+{
+  "name": "ico1036",
+  "description": "ico1036's Claude Code plugins",
+  "plugins": [
+    {
+      "name": "run-harness",
+      "description": "Run prompts autonomously in tmux with .done signal polling, heartbeat monitoring, hung detection, and exponential backoff retry.",
+      "source": {
+        "source": "github",
+        "repo": "ico1036/run-harness-plugin"
+      }
+    }
+  ]
+}
