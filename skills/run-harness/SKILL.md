@@ -1,6 +1,6 @@
 ---
 name: run-harness
-description: 하니스 작업을 tmux에서 자율 실행. 프롬프트를 받아 --dangerously-skip-permissions로 Claude 실행 후 .done 신호 폴링. dead/hung 감지 및 지수 백오프 retry. 사용 — /run-harness {프롬프트} [--timeout 초]
+description: 하니스 작업을 tmux에서 자율 실행. 프롬프트를 받아 --dangerously-skip-permissions로 Claude 실행 후 .done 신호 폴링. dead/hung 감지 및 지수 백오프 retry. 기본 팀 모드. 사용 — /run-harness {프롬프트} [--timeout 초] [--solo]
 ---
 
 # Run Harness
@@ -44,6 +44,7 @@ cursor 파일은 retry 시 삭제하지 않음 (재개용).
 
 - **prompt** (필수): Claude에게 전달할 텍스트 (스킬 호출 포함 무엇이든)
 - **--timeout** (선택): 제한 시간 초 (기본: 57600 = 16h)
+- **--solo** (선택): 팀 모드 비활성화. 단독 Claude로 실행 (기본값은 팀 모드)
 - **status** 키워드: 모든 세션 상태 조회 (아래 참고)
 
 ## 상태 확인
@@ -86,15 +87,19 @@ date +%s
 ### 2. launch.py 실행
 
 ```bash
+# 기본 (팀 모드 — 자율 팀 구성)
 python ~/.claude/plugins/run-harness/scripts/launch.py "{prompt}" --run-id {run_id} --timeout {timeout}
+
+# 단독 모드 (팀 없이 단일 Claude)
+python ~/.claude/plugins/run-harness/scripts/launch.py "{prompt}" --run-id {run_id} --timeout {timeout} --solo
 ```
 
 launch.py가 내부적으로 수행:
 - tmux 세션 `harness-{run_id}` 생성
 - `HARNESS_RUN_ID={run_id}` env var 주입 (hooks가 이 값으로 파일 경로 결정)
 - `claude --dangerously-skip-permissions` 실행 (CLAUDECODE 언셋)
-- prompt 전송
-- 8초 초기화 대기
+- Claude TUI 로드 대기 (12초) — 입력 유실 방지
+- prompt 전송 (팀 모드 시 TEAM PROTOCOL 자동 주입)
 - 5초 간격 폴링 (.done / dead / hung / timeout)
 - dead/hung 시 지수 백오프 retry [5, 10, 20]s (최대 200회)
 - timeout은 retry 없이 즉시 포기
