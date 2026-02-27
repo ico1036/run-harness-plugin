@@ -39,6 +39,8 @@ The back-and-forth isn't just prep work. It's how you configure an agent worth t
 
 ---
 
+Built on Claude Code's native Skills, Agent Teams, and Tasks — we just run them.
+
 ### Install
 
 ```
@@ -144,6 +146,8 @@ harness_1740699900  42m 5s     38s ago     🔴 hung      tool:Write
 
 티키타카는 단순한 준비 단계가 아니다. 비지도 장기 실행을 맡길 수 있는 에이전트를 설정하는 과정이다.
 
+Claude Code가 잘 만든 스킬, 에이전트 팀, 태스크 — 우리는 그걸 그대로 쓴다.
+
 ---
 
 ### 설치
@@ -201,6 +205,8 @@ Agent 开发方法论正在进化。
 ```
 
 来回对话不只是准备工作。这是配置一个值得信任、能独立运行长期任务的 Agent 的过程。
+
+Claude Code 已经把技能、Agent 团队、任务做好了 — 我们只是用起来。
 
 ---
 
