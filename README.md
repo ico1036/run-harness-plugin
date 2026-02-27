@@ -1,15 +1,172 @@
 # run-harness
 
-Claude Code plugin — tmux 기반 자율 실행 하니스.
+**Turn any Claude conversation into an autonomous background agent — instantly.**
 
-프롬프트를 tmux 세션에서 `--dangerously-skip-permissions`로 실행하고, `.done` 신호 폴링 + heartbeat 감시 + 지수 백오프 retry를 자동 처리.
+You're mid-conversation with Claude. An idea crystallizes. A strategy emerges. A task takes shape.
+
+Don't break the flow. Don't write a script. Don't build a pipeline.
+
+Just say: `/run-harness {exactly what you just figured out}`
+
+Claude picks it up, runs it in the background — fully autonomous, fully equipped — while you move on.
+
+---
+
+## Why this exists
+
+Most automation tools make you define the work *before* the conversation.
+You write pipelines. You script workflows. You plan upfront.
+
+**run-harness does the opposite.**
+
+It captures the intelligence *from* the conversation and executes it autonomously — with the full power of Claude Code: skills, agent teams, tool use, everything.
+
+```
+You ↔ Claude  (the good part — thinking together)
+              ↓
+   /run-harness {what we just figured out}
+              ↓
+   New Claude instance in tmux
+   → Uses your installed skills
+   → Can spawn agent teams (TeamCreate)
+   → Runs until done, retries on failure
+   → Signals you when complete
+```
+
+No context switching. No scaffolding. The conversation *is* the spec.
+
+---
+
+## Install
+
+```
+/plugin marketplace add https://github.com/ico1036/run-harness-plugin
+/plugin install run-harness@ico1036
+```
+
+Requires: `tmux`, `claude` CLI in PATH, Python 3.8+
+
+---
+
+## Usage
+
+```
+/run-harness {prompt}
+/run-harness {prompt} --timeout 3600
+/run-harness status
+```
+
+**Examples:**
+
+```
+/run-harness backtest all strategies in strategies/ and save results to DB
+/run-harness /mine-scrape https://quantopian.com/research
+/run-harness build a factor model using the ideas we just discussed
+```
+
+---
+
+## What happens under the hood
+
+```
+launch.py spawns tmux session harness-{run_id}
+    ↓ HARNESS_RUN_ID injected as env var
+    ↓ claude --dangerously-skip-permissions
+    ↓ your prompt sent
+    ↓ poll every 5s for .done signal
+    ↓ hung detection via heartbeat (stale > 30s → retry)
+    ↓ dead session → retry
+    ↓ exponential backoff [5s, 10s, 20s] × 3 attempts
+    ↓ timeout → give up, report
+```
+
+**Crash recovery with cursor protocol** — for long multi-step tasks, write cursor files so retries resume from where they left off, not from scratch.
+
+---
+
+## Monitoring
+
+```bash
+# Quick check inside Claude Code
+/run-harness status
+
+# Live dashboard in a separate terminal
+watch -n 2 python3 ~/.claude/plugins/run-harness/scripts/status.py
+```
+
+```
+RUN_ID              ELAPSED    HEARTBEAT   STATUS       STEP
+harness_1740700000  8m 32s     3s ago      🟢 running   tool:WebFetch
+harness_1740700100  25m 11s    -           ✅ success   -
+harness_1740699900  42m 5s     38s ago     🔴 hung      tool:Write
+```
+
+---
+
+## Hooks (auto-registered on install)
+
+| Hook | Script | What it does |
+|------|--------|--------------|
+| `PostToolUse` | `on_tool.py` | Writes heartbeat after every tool call |
+| `Stop` | `on_stop.py` | Writes `.done` signal when session ends |
+
+Zero config. Works automatically for every harness session.
+
+---
+
+## File layout
+
+```
+~/.claude/harness/
+├── signals/     {run_id}.done         ← completion signal
+├── heartbeat/   {run_id}.hb           ← liveness signal (stale > 30s = hung)
+└── cursors/     {run_id}.cursor.json  ← resume point for crash recovery
+```
+
+---
+
+> Built for people who think with Claude first, then execute.
+> The pipeline writes itself.
+
+---
+
+# run-harness (한국어)
+
+**대화에서 나온 아이디어를 그대로 자율 실행으로.**
+
+Claude와 티키타카하다 보면 좋은 작업이 떠오른다.
+그 순간을 놓치지 마라.
+
+```
+/run-harness {방금 대화에서 나온 그것}
+```
+
+끝. Claude가 백그라운드에서 알아서 한다.
+
+---
+
+## 왜 쓰는가
+
+기존 자동화 도구들은 **대화 전에** 파이프라인을 짜야 한다.
+run-harness는 반대다. **대화 후에** 실행을 시작한다.
+
+대화가 곧 스펙. 별도 스크립팅 없음.
+
+그리고 실행된 인스턴스는 Claude Code의 모든 기능을 그대로 쓴다:
+- 설치된 스킬 사용 가능
+- `TeamCreate`로 에이전트 팀 구성 가능
+- 툴 사용 전부 가능
+
+---
 
 ## 설치
 
-```bash
-/plugin marketplace add https://github.com/ico1036/run-harness-plugin
-/plugin install run-harness
 ```
+/plugin marketplace add https://github.com/ico1036/run-harness-plugin
+/plugin install run-harness@ico1036
+```
+
+---
 
 ## 사용법
 
@@ -19,42 +176,14 @@ Claude Code plugin — tmux 기반 자율 실행 하니스.
 /run-harness status
 ```
 
-## 동작 방식
+---
 
-```
-/run-harness 호출
-    ↓
-tmux 세션 생성 (harness-{run_id})
-    ↓
-claude --dangerously-skip-permissions 실행
-    ↓
-5초마다 폴링 (.done 신호 대기)
-    ↓
-hung/dead 감지 → 지수 백오프 retry (최대 3회: 5s→10s→20s)
-    ↓
-완료 또는 실패 리포트
-```
+## 장애 복구
 
-## Hooks
+긴 작업은 cursor 파일로 중단 지점을 기록한다.
+crash 후 재실행 시 처음부터가 아니라 마지막 완료 지점부터 재개.
 
-플러그인은 두 개의 hooks를 자동 등록:
+---
 
-| Hook | 파일 | 역할 |
-|------|------|------|
-| `PostToolUse` | `on_tool.py` | 매 도구 호출마다 heartbeat 갱신 |
-| `Stop` | `on_stop.py` | 세션 종료 시 `.done` 신호 기록 |
-
-## 파일 구조
-
-```
-~/.claude/harness/
-├── signals/    {run_id}.done       — 완료 신호
-├── heartbeat/  {run_id}.hb         — 생존 신호 (30s stale → hung)
-└── cursors/    {run_id}.cursor.json — crash 재개용 커서
-```
-
-## 요구사항
-
-- `tmux`
-- `claude` CLI (`claude` 커맨드가 PATH에 있어야 함)
-- Python 3.8+
+> 먼저 Claude와 생각하고, 그다음 실행한다.
+> 파이프라인은 대화에서 저절로 만들어진다.
