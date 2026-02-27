@@ -22,13 +22,29 @@ HEARTBEAT_DIR = HARNESS_BASE / "heartbeat"
 CURSORS_DIR = HARNESS_BASE / "cursors"
 
 # ── Retry configuration ────────────────────────────────────────
-MAX_RETRIES = 3
+MAX_RETRIES = 200
 RETRY_DELAYS = [5, 10, 20]
 
 POLL_INTERVAL = 5        # seconds between each poll
 HEARTBEAT_STALE = 30     # seconds before heartbeat considered stale
 INIT_WAIT = 8            # seconds to wait after sending prompt
 LOG_INTERVAL = 30        # seconds between progress log lines
+
+# ── Cursor protocol (injected into every prompt) ────────────────
+CURSOR_INSTRUCTIONS = """
+
+---[HARNESS CURSOR PROTOCOL]
+run_id: {run_id}
+cursor: ~/.claude/harness/cursors/{run_id}.cursor.json
+
+시작 시: cursor 파일을 Read하라.
+- 파일 있으면 → completed 목록 확인 후 이어서 작업
+- 파일 없으면 → 처음부터 시작
+
+각 단계 완료 시 (원자적 쓰기):
+1. Write ~/.claude/harness/cursors/{run_id}.cursor.json.tmp  {{"completed": ["단계1", "단계2", ...]}}
+2. Bash: mv ~/.claude/harness/cursors/{run_id}.cursor.json.tmp ~/.claude/harness/cursors/{run_id}.cursor.json
+---"""
 
 
 def log(msg: str) -> None:
@@ -79,7 +95,8 @@ def start_claude_session(session: str, prompt: str, cwd: str, run_id: str) -> No
     )
     log(f"tmux session '{session}' created")
 
-    subprocess.run(["tmux", "send-keys", "-t", session, prompt, "Enter"], check=True)
+    augmented = prompt + CURSOR_INSTRUCTIONS.format(run_id=run_id)
+    subprocess.run(["tmux", "send-keys", "-t", session, augmented, "Enter"], check=True)
     log(f"sent: {prompt[:80]}{'...' if len(prompt) > 80 else ''}")
 
 
@@ -136,7 +153,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Launch a harness task in tmux")
     parser.add_argument("prompt", help="Prompt to send to Claude")
     parser.add_argument("--run-id", default=None, help="Run ID (default: harness_{timestamp})")
-    parser.add_argument("--timeout", type=int, default=1800, help="Timeout in seconds (default: 1800)")
+    parser.add_argument("--timeout", type=int, default=57600, help="Timeout in seconds (default: 57600 = 16h)")
     args = parser.parse_args()
 
     run_id = args.run_id or f"harness_{int(time.time())}"
