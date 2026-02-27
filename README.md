@@ -1,5 +1,7 @@
 # run-harness
 
+**Harness engineering for Claude Code.**
+
 **Turn any Claude conversation into an autonomous background agent — instantly.**
 
 You're mid-conversation with Claude. An idea crystallizes. A strategy emerges. A task takes shape.
@@ -125,7 +127,8 @@ Zero config. Works automatically for every harness session.
 
 ---
 
-> Built for people who think with Claude first, then execute.
+> Harness engineering: wrap your agent in infrastructure it can trust.
+> Heartbeat. Signal. Retry. Resume.
 > The pipeline writes itself.
 
 ---
