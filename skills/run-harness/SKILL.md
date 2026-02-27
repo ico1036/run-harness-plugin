@@ -53,7 +53,7 @@ cursor 파일은 retry 시 삭제하지 않음 (재개용).
 `/run-harness status` 또는 "harness 상태 확인해줘" 입력 시:
 
 ```bash
-python3 ~/.claude/skills/run-harness/scripts/status.py
+python3 ~/.claude/plugins/run-harness/scripts/status.py
 ```
 
 결과 예시:
@@ -68,7 +68,7 @@ python3 ~/.claude/skills/run-harness/scripts/status.py
 ### 터미널 실시간 모니터링 (live)
 
 ```bash
-watch -n 2 python3 ~/.claude/skills/run-harness/scripts/status.py
+watch -n 2 python3 ~/.claude/plugins/run-harness/scripts/status.py
 ```
 
 2초마다 자동 갱신. 별도 터미널에 띄워두면 됨.
@@ -86,7 +86,7 @@ date +%s
 ### 2. launch.py 실행
 
 ```bash
-python ~/.claude/skills/run-harness/scripts/launch.py "{prompt}" --run-id {run_id} --timeout {timeout}
+python ~/.claude/plugins/run-harness/scripts/launch.py "{prompt}" --run-id {run_id} --timeout {timeout}
 ```
 
 launch.py가 내부적으로 수행:
@@ -96,7 +96,7 @@ launch.py가 내부적으로 수행:
 - prompt 전송
 - 8초 초기화 대기
 - 5초 간격 폴링 (.done / dead / hung / timeout)
-- dead/hung 시 지수 백오프 retry [5, 10, 20]s (최대 3회)
+- dead/hung 시 지수 백오프 retry [5, 10, 20]s (최대 200회)
 - timeout은 retry 없이 즉시 포기
 
 ### 3. 결과 리포트
